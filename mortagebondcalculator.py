@@ -1,4 +1,5 @@
-import datetime
+from datetime import date
+from dateutil.relativedelta import relativedelta
 from tabulate import tabulate
 
 print ('\nMortgage Loan Calulator\n')
@@ -27,16 +28,6 @@ def key_statistics(loan_amount,interest_rate,duration):
 
 key_statistics(loan_amount,interest_rate,duration)
 
-print ('\nEquity After Each Year')
-
-def property_equity():
-    pass
-    #change in balance of loan each year
-    #change in equity
-
-
-#property_equity(loan_amount,interest_rate,duration)
-
 print ('\nAmortization Table\n')
 
 def amortization_table(duration,loan_amount,interest_rate):
@@ -44,21 +35,19 @@ def amortization_table(duration,loan_amount,interest_rate):
     r = interest_rate/100/12
     n = duration * 12
     c = ((r * p)/(1-((1+(r))**(-n))))
-    start_date = loan_start
     mydata = []
     head = ['#','Payment Date','Opening Balance', 'Interest', 'Principal', 'Total Payments','Closing Balance', 'Remaining']
 
-    months = n
-    month = 0
+    mnths = n
+    mnth = 0
     beginning_balance = float(loan_amount)
-    interest = (p*r - c)*(((1 + r)**n - 1)/r)+c*n
-    payment_date = start_date
+    payment_date = loan_start
 
-    while beginning_balance >= 0 and interest >=0:
+    while beginning_balance >= 0:
         #remaining payments - works
-        months -= 1
+        mnths -= 1
         #payment number - works
-        month += 1
+        mnth += 1
         #opening balance - works 
         opening_balance = float(beginning_balance)
         #interest 
@@ -70,12 +59,71 @@ def amortization_table(duration,loan_amount,interest_rate):
         #closing balance - works
         closing_balance = round(opening_balance - principal_paid,2)
         #payment_date
+        yr = int(payment_date[:4])
+        mn = int(payment_date[5:7])
+        day = int(payment_date[8:10])
+        payment_date = date(yr,mn,day)
         #add values to list
-        mydata.append([month , payment_date,opening_balance ,interest_paid ,principal_paid ,total_payment ,closing_balance ,months])
+        mydata.append([mnth , payment_date,opening_balance ,interest_paid ,principal_paid ,total_payment ,closing_balance ,mnths])
         #new opening n=balance
         beginning_balance -= principal_paid
         #new date
+        payment_date += relativedelta(months=1)
+        payment_date = str(payment_date)
+
         
-    return print(tabulate(mydata, headers=head, tablefmt="grid"))
+    return print(tabulate(mydata, headers=head, tablefmt="grid") +'\n')
 
 amortization_table(duration,loan_amount,interest_rate)
+
+print ('\nEquity After Each Year\n')
+
+def property_equity(purchase_price,loan_amount,duration,interest_rate):
+    prop_val = purchase_price
+    p = loan_amount
+    r = interest_rate/100/12
+    n = duration * 12
+    c = ((r * p)/(1-((1+(r))**(-n))))
+    mydata = []
+    head = ['Year', 'Property Value', 'Loan Amount', 'Change in Equity']
+
+
+    beginning_balance = float(p)
+    mnths = n + 1
+    year = duration
+    while beginning_balance >=0 and mnths!=0:
+        #remaining payments - works
+        mnths -= 1
+        #interest
+        interest_paid = float(r * beginning_balance)
+        #prinicipal
+        principal_paid = float(c - interest_paid)
+        #after paying
+        beginning_balance -= principal_paid
+        #for each year?
+        if mnths % 12 == 0 and mnths != 0:
+            chngequ_question = input ('Has Your Property Value Changed? (Y/N) ')
+            if chngequ_question == 'Y':
+                new_prop_value = int(input('Enter Your New Property Value (For This Year): R'))
+                if new_prop_value > 0:
+                    prop_val = new_prop_value
+            if year == 'Inception':
+                year = duration
+            year = year - (mnths/12)
+            if year == 0:
+                year = 'Inception'
+            equity = prop_val - beginning_balance
+            mydata.append([year,prop_val,beginning_balance,equity])
+            print(tabulate(mydata, headers=head, tablefmt="grid"))
+        elif mnths == 1:
+            year = duration
+            beginning_balance = 0
+            equity = prop_val - beginning_balance
+            mydata.append([year,prop_val,beginning_balance,equity])
+            print(tabulate(mydata, headers=head, tablefmt="grid"))
+        
+    return print('\nSummary\n' + tabulate(mydata, headers=head, tablefmt="grid") +'\n')
+        
+property_equity(purchase_price,loan_amount,duration,interest_rate)
+
+print('Thats a wrap.\nGoodbye!\n')
